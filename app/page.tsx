@@ -1,7 +1,11 @@
+import { Home } from "@/components/home";
+import { LandingPageStats } from "@/components/layout/landing-page-stats/landing-page-stats";
 
-export default function Home() {
+export default function HomePage() {
   return (
-    <div className="flex flex-1 items-center justify-center">
-    </div>
+    <>
+      <Home />
+      <LandingPageStats />
+    </>
   );
 }

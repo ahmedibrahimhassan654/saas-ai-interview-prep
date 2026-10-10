@@ -29,7 +29,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         suppressHydrationWarning
         className="min-h-full flex flex-col bg-background text-foreground"
       >
-        <Providers>{children}</Providers>
+        <Providers>
+          <div className="relative flex flex-col h-screen">
+            <main className="container mx-auto max-w-7xl pt-16 px-6 flex-grow">
+              {children}
+            </main>
+          </div>
+        </Providers>
       </body>
     </html>
   );
