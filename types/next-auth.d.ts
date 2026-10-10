@@ -1,5 +1,3 @@
-import type { DefaultSession } from "next-auth";
-
 export interface ProfilePicture {
   id?: string;
   url?: string | null;
@@ -20,22 +18,27 @@ export interface AuthProvider {
   providerId: string;
 }
 
+export interface SessionUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  roles: string[];
+  profilePicture?: ProfilePicture | null;
+  subscription?: Subscription | null;
+  authProviders?: AuthProvider[];
+}
+
 declare module "next-auth" {
   interface Session {
-    user: {
-      id: string;
-      roles: string[];
-      profilePicture?: ProfilePicture;
-      subscription?: Subscription;
-      authProviders?: AuthProvider[];
-    } & DefaultSession["user"];
+    user: SessionUser;
   }
 
   interface User {
     id: string;
     roles: string[];
-    profilePicture?: ProfilePicture;
-    subscription?: Subscription;
+    profilePicture?: ProfilePicture | null;
+    subscription?: Subscription | null;
     authProviders?: AuthProvider[];
   }
 }
@@ -44,8 +47,6 @@ declare module "next-auth/jwt" {
   interface JWT {
     id?: string;
     roles?: string[];
-    profilePicture?: ProfilePicture;
-    subscription?: Subscription;
-    authProviders?: AuthProvider[];
+    user?: SessionUser;
   }
 }

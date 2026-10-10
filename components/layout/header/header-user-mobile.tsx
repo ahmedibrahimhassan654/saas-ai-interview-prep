@@ -6,6 +6,7 @@ import { Icon } from "@iconify/react";
 export type MobileUser = {
   name?: string | null;
   email?: string | null;
+  image?: string | null;
   profilePicture?: {
     id?: string;
     url?: string | null;
@@ -19,7 +20,7 @@ export function HeaderUserMobile({ user }: { user?: MobileUser }) {
   const name = user?.name ?? "User";
   const email = user?.email ?? "";
   const role = user?.roles?.[0];
-  const avatar = user?.profilePicture?.url ?? DEFAULT_AVATAR;
+  const avatar = user?.profilePicture?.url ?? user?.image ?? DEFAULT_AVATAR;
 
   return (
     <div className="flex items-center gap-3">

@@ -1,7 +1,43 @@
 import type { AuthOptions, Profile } from "next-auth";
+import type { SessionUser, Subscription } from "@/types/next-auth";
+import GitHubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import dbConnect from "@/backend/config/dbConnect";
 import User from "@/backend/models/user.model";
+
+type SubscriptionLike = {
+  id?: string;
+  customerId?: string;
+  status?: string;
+  created?: Date | string;
+  startDate?: Date | string;
+  currentPeriodEnd?: Date | string;
+  nextPaymentAttempt?: Date | string;
+};
+
+function toIso(value?: Date | string): string | undefined {
+  if (!value) {
+    return undefined;
+  }
+  return value instanceof Date ? value.toISOString() : value;
+}
+
+function toSubscription(
+  subscription: SubscriptionLike | null | undefined,
+): Subscription | undefined {
+  if (!subscription) {
+    return undefined;
+  }
+  return {
+    id: subscription.id,
+    customerId: subscription.customerId,
+    status: subscription.status,
+    created: toIso(subscription.created),
+    startDate: toIso(subscription.startDate),
+    currentPeriodEnd: toIso(subscription.currentPeriodEnd),
+    nextPaymentAttempt: toIso(subscription.nextPaymentAttempt),
+  };
+}
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -40,22 +76,14 @@ export const authOptions: AuthOptions = {
           email: user.email,
           roles: user.roles,
           profilePicture: user.profilePicture,
+          subscription: toSubscription(user.subscription),
           authProviders: user.authProviders,
-          subscription: user.subscription
-            ? {
-                id: user.subscription.id,
-                customerId: user.subscription.customerId,
-                status: user.subscription.status,
-                created: user.subscription.created?.toISOString(),
-                startDate: user.subscription.startDate?.toISOString(),
-                currentPeriodEnd:
-                  user.subscription.currentPeriodEnd?.toISOString(),
-                nextPaymentAttempt:
-                  user.subscription.nextPaymentAttempt?.toISOString(),
-              }
-            : undefined,
         };
       },
+    }),
+    GitHubProvider({
+      clientId: process.env.GITHUB_CLIENT_ID!,
+      clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     }),
   ],
   session: {
@@ -75,7 +103,9 @@ export const authOptions: AuthOptions = {
       }
 
       // Social login flow (Google, GitHub, etc.)
-      const existingUser = await User.findOne({ email: user.email ?? undefined });
+      const existingUser = await User.findOne({
+        email: user.email ?? undefined,
+      });
 
       const providerId =
         account?.providerAccountId ??
@@ -102,6 +132,19 @@ export const authOptions: AuthOptions = {
       } else {
         user.id = existingUser._id.toString();
 
+        // Refresh the avatar from the social provider when available
+        const socialImage = profile?.image ?? user.image;
+        const profileChanged =
+          socialImage != null &&
+          existingUser.profilePicture?.url !== socialImage;
+
+        if (profileChanged) {
+          existingUser.profilePicture = {
+            ...(existingUser.profilePicture ?? {}),
+            url: socialImage,
+          };
+        }
+
         const alreadyLinked = (existingUser.authProviders ?? []).some(
           (p: { provider: string; providerId: string }) =>
             p.provider === account?.provider,
@@ -112,6 +155,9 @@ export const authOptions: AuthOptions = {
             provider: account.provider,
             providerId: providerId ?? "unknown",
           });
+        }
+
+        if (profileChanged || !alreadyLinked) {
           await existingUser.save();
         }
       }
@@ -120,23 +166,48 @@ export const authOptions: AuthOptions = {
     },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.roles = user.roles;
-        token.profilePicture = user.profilePicture;
-        token.subscription = user.subscription;
-        token.authProviders = user.authProviders;
+        // Initial sign-in: fetch the full user from the DB so the session
+        // contains roles/subscription/authProviders (not just provider data).
+        await dbConnect();
+        const dbUser = await User.findById(user.id).lean();
+
+        if (dbUser) {
+          const fullUser: SessionUser = {
+            id: String(dbUser._id),
+            name: dbUser.name,
+            email: dbUser.email,
+            roles: dbUser.roles ?? [],
+            profilePicture: dbUser.profilePicture,
+            subscription: toSubscription(dbUser.subscription),
+            authProviders: dbUser.authProviders ?? [],
+          };
+          token.user = fullUser;
+        } else {
+          token.user = {
+            id: user.id,
+            name: user.name ?? undefined,
+            email: user.email ?? undefined,
+            image: user.image ?? undefined,
+            roles: user.roles ?? [],
+            profilePicture: user.profilePicture,
+            subscription: toSubscription(user.subscription),
+            authProviders: user.authProviders,
+          };
+        }
       }
+      // On subsequent calls `user` is undefined; keep the existing token.user.
       return token;
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.id ?? "";
-        session.user.roles = token.roles ?? [];
-        session.user.profilePicture = token.profilePicture;
-        session.user.subscription = token.subscription;
-        session.user.authProviders = token.authProviders;
+      if (token.user) {
+        session.user = token.user;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return `${baseUrl}/app/dashboard`;
     },
   },
 };

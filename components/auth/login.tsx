@@ -22,6 +22,10 @@ export function Login() {
   const [isVisible, setIsVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  const handleGitHubLogin = async () => {
+    await signIn("github", { callbackUrl: "/app/dashboard" });
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
@@ -113,6 +117,26 @@ export function Login() {
           </Link>
         </p>
       </Form>
+
+      <div className="flex w-full max-w-sm flex-col items-center gap-4">
+        <div className="flex w-full items-center gap-3 text-xs text-muted">
+          <span className="h-px flex-1 bg-separator" />
+          or continue with
+          <span className="h-px flex-1 bg-separator" />
+        </div>
+
+        <Button
+          type="button"
+          variant="outline"
+          fullWidth
+          onPress={handleGitHubLogin}
+        >
+          <span className="flex items-center gap-2">
+            <Icon icon="logos:github-icon" className="h-5 w-5" />
+            Continue with GitHub
+          </span>
+        </Button>
+      </div>
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { signOut } from "next-auth/react";
 export type SessionUser = {
   name?: string | null;
   email?: string | null;
+  image?: string | null;
   profilePicture?: {
     id?: string;
     url?: string | null;
@@ -22,7 +23,8 @@ export function HeaderUser({ user }: { user?: SessionUser }) {
   const name = user?.name ?? "User";
   const email = user?.email ?? "";
   const role = user?.roles?.[0];
-  const avatar = user?.profilePicture?.url ?? DEFAULT_AVATAR;
+  const avatar =
+    user?.profilePicture?.url ?? user?.image ?? DEFAULT_AVATAR;
 
   const handleLogout = async () => {
     await signOut({ redirect: false });
