@@ -16,43 +16,33 @@ import {
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Logo } from "@/config/Logo";
+import { useGenericSubmitHandler } from "@/components/form/generic-submit-handler";
 
 export function Login() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { handleSubmit, loading } = useGenericSubmitHandler(async (data) => {
+    const result = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      toast.danger("Incorrect email or password.");
+    } else {
+      toast.success("Signed in successfully. Welcome back!");
+      router.push("/");
+      router.refresh();
+    }
+  });
 
   const handleGitHubLogin = async () => {
     await signIn("github", { callbackUrl: "/app/dashboard" });
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-
-    try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        toast.danger("Incorrect email or password.");
-      } else {
-        toast.success("Signed in successfully. Welcome back!");
-        router.push("/");
-        router.refresh();
-      }
-    } catch (error) {
-      console.error(error);
-      toast.danger("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+  const handleGoogleLogin = async () => {
+    await signIn("google", { callbackUrl: "/app/dashboard" });
   };
 
   return (
@@ -103,7 +93,7 @@ export function Login() {
         <Button
           type="submit"
           variant="primary"
-          isPending={isLoading}
+          isPending={loading}
           fullWidth
           className="mt-2"
         >
@@ -130,10 +120,24 @@ export function Login() {
           variant="outline"
           fullWidth
           onPress={handleGitHubLogin}
+          isDisabled={loading}
         >
           <span className="flex items-center gap-2">
             <Icon icon="logos:github-icon" className="h-5 w-5" />
             Continue with GitHub
+          </span>
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          fullWidth
+          onPress={handleGoogleLogin}
+          isDisabled={loading}
+        >
+          <span className="flex items-center gap-2">
+            <Icon icon="logos:google-icon" className="h-5 w-5" />
+            Continue with Google
           </span>
         </Button>
       </div>

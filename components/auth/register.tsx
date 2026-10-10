@@ -15,37 +15,25 @@ import {
 import { Icon } from "@iconify/react";
 import { Logo } from "@/config/Logo";
 import { registerUser } from "@/actions/auth.action";
+import { useGenericSubmitHandler } from "@/components/form/generic-submit-handler";
 
 export function Register() {
   const [isVisible, setIsVisible] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { handleSubmit, loading } = useGenericSubmitHandler(async (data) => {
+    const form = document.querySelector('form') as HTMLFormElement;
+    const response = await registerUser(
+      data.name,
+      data.email,
+      data.password,
+    );
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const data = Object.fromEntries(formData.entries());
-    try {
-      const response = await registerUser(
-        data.name as string,
-        data.email as string,
-        data.password as string,
-      );
-
-      if (response.created) {
-        toast.success(response.message);
-        form.reset();
-      } else {
-        toast.danger(response.message);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.danger("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
+    if (response.created) {
+      toast.success(response.message);
+      form?.reset();
+    } else {
+      toast.danger(response.message);
     }
-  };
+  });
 
   return (
     <div className="flex min-h-[calc(100vh-200px)] flex-col items-center justify-center gap-8 py-12">
@@ -104,7 +92,7 @@ export function Register() {
         <Button
           type="submit"
           variant="primary"
-          isPending={isLoading}
+          isPending={loading}
           fullWidth
           className="mt-2"
         >

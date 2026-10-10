@@ -1,6 +1,7 @@
 import type { AuthOptions, Profile } from "next-auth";
 import type { SessionUser, Subscription } from "@/types/next-auth";
 import GitHubProvider from "next-auth/providers/github";
+import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import dbConnect from "@/backend/config/dbConnect";
 import User from "@/backend/models/user.model";
@@ -85,6 +86,10 @@ export const authOptions: AuthOptions = {
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
     }),
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
   ],
   session: {
     strategy: "jwt",
@@ -107,10 +112,11 @@ export const authOptions: AuthOptions = {
         email: user.email ?? undefined,
       });
 
+      // Google exposes the id under `sub`, GitHub under `id`.
       const providerId =
         account?.providerAccountId ??
-        (profile as (Profile & { id?: string }) | undefined)?.id ??
-        profile?.sub;
+        profile?.sub ??
+        (profile as (Profile & { id?: string }) | undefined)?.id;
 
       if (!existingUser) {
         const newUser = new User({
@@ -130,34 +136,42 @@ export const authOptions: AuthOptions = {
         await newUser.save();
         user.id = newUser._id.toString();
       } else {
+        // Multi-provider linking: allow methods like Google + GitHub to point
+        // to the SAME DB user when the emails match. If the app should instead
+        // reject a second provider per account, replace the body below with:
+        //   throw new Error("Please sign in with your existing provider.");
         user.id = existingUser._id.toString();
 
-        // Refresh the avatar from the social provider when available
+        const provider = account?.provider;
         const socialImage = profile?.image ?? user.image;
-        const profileChanged =
-          socialImage != null &&
-          existingUser.profilePicture?.url !== socialImage;
 
-        if (profileChanged) {
+        const existingProvider = (existingUser.authProviders ?? []).find(
+          (p: { provider: string; providerId: string }) =>
+            p.provider === provider,
+        );
+
+        let changed = false;
+
+        // Link the new provider only if it isn't already linked (idempotent).
+        if (!existingProvider && provider) {
+          existingUser.authProviders.push({
+            provider,
+            providerId: providerId ?? "unknown",
+          });
+          changed = true;
+        }
+
+        // Only fill the profile picture if the account has none yet, so an
+        // existing/updated avatar is never overwritten by a later provider.
+        if (!existingUser.profilePicture?.url && socialImage) {
           existingUser.profilePicture = {
             ...(existingUser.profilePicture ?? {}),
             url: socialImage,
           };
+          changed = true;
         }
 
-        const alreadyLinked = (existingUser.authProviders ?? []).some(
-          (p: { provider: string; providerId: string }) =>
-            p.provider === account?.provider,
-        );
-
-        if (!alreadyLinked && account?.provider) {
-          existingUser.authProviders.push({
-            provider: account.provider,
-            providerId: providerId ?? "unknown",
-          });
-        }
-
-        if (profileChanged || !alreadyLinked) {
+        if (changed) {
           await existingUser.save();
         }
       }
