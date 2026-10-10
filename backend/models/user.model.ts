@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from "mongoose";
+import bcrypt from "bcryptjs";
 import { userRoles } from "@/constants";
 
 export interface IUser extends Document {
@@ -72,6 +73,16 @@ const userSchema = new Schema<IUser>(
   },
   { timestamps: true },
 );
+
+userSchema.pre("save", async function () {
+  if (!this.isModified("password")) {
+    return;
+  }
+
+  if (this.password) {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
+});
 
 const User = mongoose.models.User || mongoose.model<IUser>("User", userSchema);
 
