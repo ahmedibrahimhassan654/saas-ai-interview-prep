@@ -18,7 +18,9 @@ export const authOptions: AuthOptions = {
 
         await dbConnect();
 
-        const user = await User.findOne({ email: credentials.email });
+        const user = await User.findOne({ email: credentials.email }).select(
+          "+password",
+        );
 
         if (!user || !user.password) {
           throw new Error("No account found with this email.");
@@ -37,6 +39,21 @@ export const authOptions: AuthOptions = {
           name: user.name,
           email: user.email,
           roles: user.roles,
+          profilePicture: user.profilePicture,
+          authProviders: user.authProviders,
+          subscription: user.subscription
+            ? {
+                id: user.subscription.id,
+                customerId: user.subscription.customerId,
+                status: user.subscription.status,
+                created: user.subscription.created?.toISOString(),
+                startDate: user.subscription.startDate?.toISOString(),
+                currentPeriodEnd:
+                  user.subscription.currentPeriodEnd?.toISOString(),
+                nextPaymentAttempt:
+                  user.subscription.nextPaymentAttempt?.toISOString(),
+              }
+            : undefined,
         };
       },
     }),
@@ -53,6 +70,9 @@ export const authOptions: AuthOptions = {
       if (user) {
         token.id = user.id;
         token.roles = user.roles;
+        token.profilePicture = user.profilePicture;
+        token.subscription = user.subscription;
+        token.authProviders = user.authProviders;
       }
       return token;
     },
@@ -60,6 +80,9 @@ export const authOptions: AuthOptions = {
       if (session.user) {
         session.user.id = token.id ?? "";
         session.user.roles = token.roles ?? [];
+        session.user.profilePicture = token.profilePicture;
+        session.user.subscription = token.subscription;
+        session.user.authProviders = token.authProviders;
       }
       return session;
     },
