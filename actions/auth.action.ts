@@ -1,11 +1,14 @@
 "use server";
 
-import { register } from "@/backend/controllers/auth.controller";
+import {
+  register,
+  type RegisterResult,
+} from "@/backend/controllers/auth.controller";
 
 export async function registerUser(
   name: string,
   email: string,
   password: string,
-): Promise<{ created: boolean }> {
+): Promise<RegisterResult> {
   return await register(name, email, password);
 }

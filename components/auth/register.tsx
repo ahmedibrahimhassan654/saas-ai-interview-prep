@@ -10,6 +10,7 @@ import {
   InputGroup,
   Label,
   TextField,
+  toast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Logo } from "@/config/Logo";
@@ -22,7 +23,8 @@ export function Register() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    const formData = new FormData(e.currentTarget);
+    const form = e.currentTarget;
+    const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
     try {
       const response = await registerUser(
@@ -30,9 +32,16 @@ export function Register() {
         data.email as string,
         data.password as string,
       );
-      console.log(response);
+
+      if (response.created) {
+        toast.success(response.message);
+        form.reset();
+      } else {
+        toast.danger(response.message);
+      }
     } catch (error) {
       console.error(error);
+      toast.danger("Something went wrong. Please try again.");
     } finally {
       setIsLoading(false);
     }
