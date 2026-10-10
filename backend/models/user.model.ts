@@ -27,6 +27,7 @@ export interface IUser extends Document {
   };
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
+  comparePassword(enteredPassword: string): Promise<boolean>;
 }
 
 const userSchema = new Schema<IUser>(
@@ -83,6 +84,17 @@ userSchema.pre("save", async function () {
     this.password = await bcrypt.hash(this.password, 10);
   }
 });
+
+userSchema.methods.comparePassword = async function (
+  this: IUser,
+  enteredPassword: string,
+): Promise<boolean> {
+  if (!this.password) {
+    return false;
+  }
+
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 const User = mongoose.models.User || mongoose.model<IUser>("User", userSchema);
 
