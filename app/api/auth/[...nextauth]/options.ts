@@ -1,4 +1,4 @@
-import type { AuthOptions } from "next-auth";
+import type { AuthOptions, Profile } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import dbConnect from "@/backend/config/dbConnect";
 import User from "@/backend/models/user.model";
@@ -66,6 +66,58 @@ export const authOptions: AuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
+    async signIn({ user, account, profile }) {
+      await dbConnect();
+
+      if (account?.provider === "credentials") {
+        // Credentials flow: authorize already sets the DB id as user.id
+        return true;
+      }
+
+      // Social login flow (Google, GitHub, etc.)
+      const existingUser = await User.findOne({ email: user.email ?? undefined });
+
+      const providerId =
+        account?.providerAccountId ??
+        (profile as (Profile & { id?: string }) | undefined)?.id ??
+        profile?.sub;
+
+      if (!existingUser) {
+        const newUser = new User({
+          email: user.email,
+          name: user.name ?? "User",
+          profilePicture: {
+            url: profile?.image ?? user.image ?? null,
+          },
+          authProviders: [
+            {
+              provider: account?.provider ?? "oauth",
+              providerId: providerId ?? "unknown",
+            },
+          ],
+        });
+
+        await newUser.save();
+        user.id = newUser._id.toString();
+      } else {
+        user.id = existingUser._id.toString();
+
+        const alreadyLinked = (existingUser.authProviders ?? []).some(
+          (p: { provider: string; providerId: string }) =>
+            p.provider === account?.provider,
+        );
+
+        if (!alreadyLinked && account?.provider) {
+          existingUser.authProviders.push({
+            provider: account.provider,
+            providerId: providerId ?? "unknown",
+          });
+          await existingUser.save();
+        }
+      }
+
+      return true;
+    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
