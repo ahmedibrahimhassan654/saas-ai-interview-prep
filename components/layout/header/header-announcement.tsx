@@ -13,7 +13,7 @@ export function HeaderAnnouncement({ isVisible = true }: HeaderAnnouncementProps
   }
 
   return (
-    <div className="w-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
+    <div className="w-full bg-linear-to-r from-blue-500 via-purple-500 to-pink-500 text-white">
       <div className="mx-auto flex max-w-7xl flex-col items-center justify-center gap-2 px-4 py-2 text-center sm:flex-row sm:gap-4">
         <p className="text-sm font-medium">
           Prep smarter, succeed faster. Your interview journey starts here.
