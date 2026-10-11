@@ -21,17 +21,14 @@ export function Register() {
   const [isVisible, setIsVisible] = useState(false);
   const { handleSubmit, loading } = useGenericSubmitHandler(async (data) => {
     const form = document.querySelector('form') as HTMLFormElement;
-    const response = await registerUser(
-      data.name,
-      data.email,
-      data.password,
-    );
-
-    if (response.created) {
-      toast.success(response.message);
+    const response = await registerUser(data.name, data.email, data.password);
+    console.log(response);
+    if (response?.error) {
+      console.error(response.error.message, response.error.statusCode);
+      // TODO: display error to user (next lecture)
+    } else if (response?.created) {
+      toast.success("Account created successfully. Welcome aboard!");
       form?.reset();
-    } else {
-      toast.danger(response.message);
     }
   });
 

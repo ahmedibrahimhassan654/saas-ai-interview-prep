@@ -1,28 +1,16 @@
 import dbConnect from "../config/dbConnect";
 import User from "../models/user.model";
+import { catchAsyncError } from "../middlewares/catchAsyncError";
 
-export interface RegisterResult {
-  created: boolean;
-  message: string;
+interface RegisterSuccess {
+  created: true;
 }
 
-function isDuplicateKeyError(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "code" in error &&
-    (error as { code?: number }).code === 11000
-  );
-}
+type RegisterReturn = RegisterSuccess | { error: { message: string; statusCode: number } };
 
-export async function register(
-  name: string,
-  email: string,
-  password: string,
-): Promise<RegisterResult> {
-  await dbConnect();
-
-  try {
+export const register = catchAsyncError<[string, string, string], RegisterReturn>(
+  async (name: string, email: string, password: string): Promise<RegisterReturn> => {
+    await dbConnect();
     const newUser = await User.create({
       name,
       email,
@@ -34,30 +22,9 @@ export async function register(
         },
       ],
     });
-
     if (newUser?._id) {
-      return {
-        created: true,
-        message: "Account created successfully. Welcome aboard!",
-      };
+      return { created: true };
     }
-
-    return {
-      created: false,
-      message: "We couldn't create your account. Please try again.",
-    };
-  } catch (error) {
-    if (isDuplicateKeyError(error)) {
-      return {
-        created: false,
-        message: "An account with this email already exists.",
-      };
-    }
-
-    console.error("register error:", error);
-    return {
-      created: false,
-      message: "Something went wrong. Please try again.",
-    };
+    throw new Error("User not created");
   }
-}
+);
