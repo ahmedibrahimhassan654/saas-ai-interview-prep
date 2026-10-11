@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import { Toaster } from "react-hot-toast";
 import { Providers } from "@/components/providers";
 import { HeaderAnnouncement } from "@/components/layout/header/header-announcement";
 import { Navbar } from "@/components/layout/header/navbar";
@@ -85,6 +86,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               <Footer />
             </footer>
           </div>
+          <Toaster position="top-right" />
         </Providers>
       </body>
     </html>

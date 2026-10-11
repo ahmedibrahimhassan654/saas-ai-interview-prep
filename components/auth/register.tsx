@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "react-hot-toast";
 import {
   Button,
   FieldError,
@@ -10,7 +12,6 @@ import {
   InputGroup,
   Label,
   TextField,
-  toast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Logo } from "@/config/Logo";
@@ -19,16 +20,18 @@ import { useGenericSubmitHandler } from "@/components/form/generic-submit-handle
 
 export function Register() {
   const [isVisible, setIsVisible] = useState(false);
+  const router = useRouter();
   const { handleSubmit, loading } = useGenericSubmitHandler(async (data) => {
-    const form = document.querySelector('form') as HTMLFormElement;
     const response = await registerUser(data.name, data.email, data.password);
-    console.log(response);
+
     if (response?.error) {
-      console.error(response.error.message, response.error.statusCode);
-      // TODO: display error to user (next lecture)
-    } else if (response?.created) {
-      toast.success("Account created successfully. Welcome aboard!");
-      form?.reset();
+      toast.error(response.error.message);
+      return;
+    }
+
+    if (response?.created) {
+      toast.success("Account created successfully");
+      router.push("/login");
     }
   });
 

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
+import { toast } from "react-hot-toast";
 import {
   Button,
   FieldError,
@@ -12,7 +13,6 @@ import {
   InputGroup,
   Label,
   TextField,
-  toast,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Logo } from "@/config/Logo";
@@ -22,18 +22,21 @@ export function Login() {
   const router = useRouter();
   const [isVisible, setIsVisible] = useState(false);
   const { handleSubmit, loading } = useGenericSubmitHandler(async (data) => {
-    const result = await signIn("credentials", {
+    const res = await signIn("credentials", {
       email: data.email,
       password: data.password,
       redirect: false,
     });
 
-    if (result?.error) {
-      toast.danger("Incorrect email or password.");
-    } else {
-      toast.success("Signed in successfully. Welcome back!");
-      router.push("/");
-      router.refresh();
+    if (res?.error) {
+      const message = res.error === "CredentialsSignin" ? "Invalid email or password" : res.error;
+      toast.error(message);
+      return;
+    }
+
+    if (res?.ok) {
+      toast.success("Logged in successfully");
+      router.push("/dashboard");
     }
   });
 
