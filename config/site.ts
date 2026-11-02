@@ -1,6 +1,8 @@
 export interface NavItem {
   label: string;
   href: string;
+  /** When set, the item is only shown to users with this role. */
+  role?: "admin";
 }
 
 export const siteConfig = {
@@ -11,7 +13,7 @@ export const siteConfig = {
     { label: "Pricing", href: "/#pricing" },
   ] as NavItem[],
   navMenuItems: [
-    { label: "Admin Dashboard", href: "/admin/dashboard" },
+    { label: "Admin Dashboard", href: "/admin/dashboard", role: "admin" },
     { label: "App Dashboard", href: "/dashboard" },
     { label: "Logout", href: "#" },
   ] as NavItem[],

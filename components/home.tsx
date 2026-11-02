@@ -1,10 +1,16 @@
-import { buttonVariants } from "@heroui/react";
+"use client";
+
+import { Button, buttonVariants } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 
 export function Home() {
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
-    <section className="flex flex-col items-center justify-center gap-8 py-20 md:py-32">
+    <section className="flex flex-col items-center justify-center gap-8 py-20 md:py-32 relative">
       <div className="flex flex-col items-center gap-6 text-center">
         <Link
           href="/#pricing"
@@ -56,6 +62,18 @@ export function Home() {
           </Link>
         </div>
       </div>
+
+      <Button
+        onPress={scrollToTop}
+        variant="outline"
+        size="md"
+        className="fixed bottom-6 right-6 rounded-full shadow-lg"
+      >
+        <span className="flex items-center gap-2">
+          Back to top
+          <Icon icon="solar:arrow-up-linear" className="h-4 w-4" />
+        </span>
+      </Button>
     </section>
   );
 }

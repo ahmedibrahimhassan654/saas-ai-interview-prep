@@ -17,6 +17,10 @@ export function Navbar() {
   const router = useRouter();
   const { data, status } = useSession();
   const user = data?.user;
+  const isAdmin = user?.roles?.includes("admin") ?? false;
+  const menuItems = siteConfig.navMenuItems.filter(
+    (item) => item.role !== "admin" || isAdmin,
+  );
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-separator bg-background/80 backdrop-blur-md">
@@ -128,7 +132,7 @@ export function Navbar() {
               </div>
             )}
 
-            {siteConfig.navMenuItems.map((item) =>
+            {menuItems.map((item) =>
               item.label === "Logout" ? (
                 <button
                   key={item.label}

@@ -1,31 +1,34 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
 
-// Route protection for all /app/* routes. Unauthenticated users are redirected
-// to the sign-in page configured below.
+// Route protection for the authenticated areas of the app.
 //
 // NOTE: Next.js 16 renamed `middleware.ts` -> `proxy.ts`; the `middleware.ts`
-// file convention is deprecated, so this proxy.ts is the equivalent. (This is
-// the lecture's "middleware.ts / Version B" structure.)
+// file convention is deprecated, so this proxy.ts is the equivalent.
 //
 // `req.nextauth.token` is the JWT payload. The `jwt` callback stores the full
-// DB user at `token.user`, so future checks here can read:
+// DB user at `token.user`, so authorization checks here read:
 //   token.user.roles        (e.g. ["user"] or ["user", "admin"])
 //   token.user.subscription (e.g. { status: "active" })
+//
+// Authentication (is there a token?) is handled by the `authorized` callback
+// below. Authorization (which role may see which area?) is handled in the
+// proxy function.
 export default withAuth(
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- `req` is reserved for the future auth checks below
-  function middleware(req) {
-    // const { pathname } = req.nextUrl;
-    // const token = req.nextauth.token;
+  function proxy(req) {
+    const { pathname } = req.nextUrl;
+    const roles = req.nextauth.token?.user?.roles ?? [];
 
-    // Placeholder for future authorization checks (admin, subscription, etc.).
-    // Example (commented out for now):
-    // if (pathname.startsWith("/admin") && !token?.user?.roles?.includes("admin")) {
-    //   return NextResponse.redirect(new URL("/", req.url));
-    // }
+    // Admin area: only users with the "admin" role may enter. Everyone else
+    // is sent back to the regular dashboard instead of seeing a 404/blank page.
+    if (pathname.startsWith("/admin") && !roles.includes("admin")) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
+    // Placeholder for future authorization checks (e.g. subscription gating):
     // if (
     //   pathname.startsWith("/app") &&
-    //   token?.user?.subscription?.status !== "active"
+    //   req.nextauth.token?.user?.subscription?.status !== "active"
     // ) {
     //   return NextResponse.redirect(new URL("/subscribe", req.url));
     // }
@@ -35,6 +38,9 @@ export default withAuth(
   {
     pages: { signIn: "/login" },
     callbacks: {
+      // Any authenticated user passes here; role checks happen above. This is
+      // intentional: `authorized` returning false redirects to the sign-in
+      // page, which is wrong for a signed-in user who lacks a role.
       authorized: ({ token }) => !!token,
     },
   },

@@ -23,6 +23,7 @@ export function HeaderUser({ user }: { user?: SessionUser }) {
   const name = user?.name ?? "User";
   const email = user?.email ?? "";
   const role = user?.roles?.[0];
+  const isAdmin = user?.roles?.includes("admin") ?? false;
   const avatar =
     user?.profilePicture?.url ?? user?.image ?? DEFAULT_AVATAR;
 
@@ -62,14 +63,16 @@ export function HeaderUser({ user }: { user?: SessionUser }) {
           <Dropdown.Item isDisabled textValue={`Signed in as ${email}`}>
             <span className="text-xs text-muted">Signed in as {email}</span>
           </Dropdown.Item>
-          <Dropdown.Item
-            id="admin-dashboard"
-            href="/admin/dashboard"
-            textValue="Admin Dashboard"
-          >
-            <Icon icon="solar:shield-user-bold" className="h-4 w-4" />
-            Admin Dashboard
-          </Dropdown.Item>
+          {isAdmin && (
+            <Dropdown.Item
+              id="admin-dashboard"
+              href="/admin/dashboard"
+              textValue="Admin Dashboard"
+            >
+              <Icon icon="solar:shield-user-bold" className="h-4 w-4" />
+              Admin Dashboard
+            </Dropdown.Item>
+          )}
           <Dropdown.Item
             id="app-dashboard"
             href="/dashboard"

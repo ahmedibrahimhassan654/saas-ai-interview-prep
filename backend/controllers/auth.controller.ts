@@ -1,6 +1,6 @@
 import dbConnect from "../config/dbConnect";
 import User from "../models/user.model";
-import { catchAsyncError } from "../middlewares/catchAsyncError";
+import { uploadFile, deleteFile } from "../utils/cloudinary";
 
 interface RegisterSuccess {
   created: true;
@@ -8,8 +8,18 @@ interface RegisterSuccess {
 
 type RegisterReturn = RegisterSuccess | { error: { message: string; statusCode: number } };
 
-export const register = catchAsyncError<[string, string, string], RegisterReturn>(
-  async (name: string, email: string, password: string): Promise<RegisterReturn> => {
+interface UpdateProfileSuccess {
+  success: true;
+}
+
+type UpdateProfileReturn = UpdateProfileSuccess | { error: { message: string; statusCode: number } };
+
+export const register = async (
+  name: string,
+  email: string,
+  password: string
+): Promise<RegisterReturn> => {
+  try {
     await dbConnect();
     const newUser = await User.create({
       name,
@@ -26,5 +36,67 @@ export const register = catchAsyncError<[string, string, string], RegisterReturn
       return { created: true };
     }
     throw new Error("User not created");
+  } catch (error: any) {
+    return { error: { message: error.message || "Registration failed", statusCode: 500 } };
   }
-);
+};
+
+export const updateUserProfile = async (
+  data: {
+    name: string;
+    email: string;
+    avatar?: string;
+    oldavatar?: string;
+  }
+): Promise<UpdateProfileReturn> => {
+  try {
+    await dbConnect();
+
+    let profilePictureUpdate: { id?: string; url?: string } | undefined = undefined;
+
+    if (data.avatar) {
+      try {
+        const uploadResult = await uploadFile(data.avatar, "prep-ai/avatars");
+        profilePictureUpdate = {
+          id: uploadResult.public_id,
+          url: uploadResult.url,
+        };
+
+        if (data.oldavatar) {
+          try {
+            await deleteFile(data.oldavatar);
+          } catch (error) {
+            console.error("Error deleting old avatar:", error);
+          }
+        }
+      } catch (uploadError: any) {
+        console.error("Cloudinary upload error details:", uploadError);
+        console.error("Cloudinary upload error message:", uploadError?.message);
+        return { error: { message: uploadError?.message || "Avatar upload failed", statusCode: 400 } };
+      }
+    }
+
+    const updateData: any = {
+      name: data.name,
+    };
+
+    if (profilePictureUpdate) {
+      updateData.profilePicture = profilePictureUpdate;
+    }
+
+    const updatedUser = await User.findOneAndUpdate(
+      { email: data.email },
+      updateData,
+      { new: true }
+    );
+
+    if (updatedUser) {
+      return { success: true };
+    }
+
+    throw new Error("User not found");
+  } catch (error: any) {
+    console.error("Update profile error:", error);
+    return { error: { message: error.message || "Update failed", statusCode: 500 } };
+  }
+};

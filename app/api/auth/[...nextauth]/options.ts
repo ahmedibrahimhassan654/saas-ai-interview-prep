@@ -178,7 +178,7 @@ export const authOptions: AuthOptions = {
 
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         // Initial sign-in: fetch the full user from the DB so the session
         // contains roles/subscription/authProviders (not just provider data).
@@ -207,6 +207,25 @@ export const authOptions: AuthOptions = {
             subscription: toSubscription(user.subscription),
             authProviders: user.authProviders,
           };
+        }
+      }
+
+      if (trigger === "update") {
+        await dbConnect();
+        const userId = token.user?.id || token.id;
+        if (userId) {
+          const dbUser = await User.findById(userId).lean();
+          if (dbUser) {
+            token.user = {
+              id: String(dbUser._id),
+              name: dbUser.name,
+              email: dbUser.email,
+              roles: dbUser.roles ?? [],
+              profilePicture: dbUser.profilePicture,
+              subscription: toSubscription(dbUser.subscription),
+              authProviders: dbUser.authProviders ?? [],
+            };
+          }
         }
       }
       // On subsequent calls `user` is undefined; keep the existing token.user.
