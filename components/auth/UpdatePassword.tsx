@@ -102,21 +102,16 @@ export function UpdatePassword() {
               placeholder="Enter your new password"
               required
             />
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
-              isIconOnly
-              onPress={toggleNewPasswordVisibility}
-              className="absolute right-3 mt-9"
+              onClick={toggleNewPasswordVisibility}
+              className="absolute right-3 mt-9 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Icon
-                icon={
-                  showNewPassword ? "solar:eye-linear" : "solar:eye-off-linear"
-                }
+                icon={showNewPassword ? "solar:eye-linear" : "solar:eye-off-linear"}
                 className="h-4 w-4"
               />
-            </Button>
+            </button>
           </div>
 
           <div className="flex flex-col gap-2 relative">
@@ -129,23 +124,16 @@ export function UpdatePassword() {
               placeholder="Confirm your new password"
               required
             />
-            <Button
+            <button
               type="button"
-              variant="ghost"
-              size="sm"
-              isIconOnly
-              onPress={toggleConfirmPasswordVisibility}
-              className="absolute right-3 mt-9"
+              onClick={toggleConfirmPasswordVisibility}
+              className="absolute right-3 mt-9 text-muted-foreground hover:text-foreground transition-colors"
             >
               <Icon
-                icon={
-                  showConfirmPassword
-                    ? "solar:eye-linear"
-                    : "solar:eye-off-linear"
-                }
+                icon={showConfirmPassword ? "solar:eye-linear" : "solar:eye-off-linear"}
                 className="h-4 w-4"
               />
-            </Button>
+            </button>
           </div>
 
           <Button
