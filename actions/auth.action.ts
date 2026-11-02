@@ -1,6 +1,6 @@
 "use server";
 
-import { register, updateUserProfile as updateProfile } from "@/backend/controllers/auth.controller";
+import { register, updateUserProfile as updateProfile, updateUserPassword as updatePasswordController } from "@/backend/controllers/auth.controller";
 
 export async function registerUser(
   name: string,
@@ -32,5 +32,22 @@ export async function updateUserProfile(data: {
     return { success: result.success };
   } catch (error: any) {
     return { error: { message: error.message || "Update failed", statusCode: 500 } };
+  }
+}
+
+export async function updatePassword(data: {
+  name: string;
+  email: string;
+  newPassword: string;
+  confirmPassword: string;
+}): Promise<{ success?: boolean; error?: { message: string; statusCode: number } }> {
+  try {
+    const result = await updatePasswordController(data);
+    if ('error' in result) {
+      return { error: result.error };
+    }
+    return { success: result.success };
+  } catch (error: any) {
+    return { error: { message: error.message || "Update password failed", statusCode: 500 } };
   }
 }

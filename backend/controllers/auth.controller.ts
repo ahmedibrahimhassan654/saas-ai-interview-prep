@@ -100,3 +100,47 @@ export const updateUserProfile = async (
     return { error: { message: error.message || "Update failed", statusCode: 500 } };
   }
 };
+
+export const updateUserPassword = async (
+  data: {
+    name: string;
+    email: string;
+    newPassword: string;
+    confirmPassword: string;
+  }
+): Promise<UpdateProfileReturn> => {
+  try {
+    await dbConnect();
+
+    if (data.newPassword !== data.confirmPassword) {
+      return { error: { message: "New password and confirm password do not match", statusCode: 400 } };
+    }
+
+    const user = await User.findOne({ email: data.email }).select("+password");
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    user.password = data.newPassword;
+    await user.save();
+
+    // Ensure credentials provider is linked (for OAuth users setting a password for the first time)
+    const alreadyHasCredentials = (user.authProviders ?? []).some(
+      (p: { provider: string; providerId: string }) => p.provider === "credentials",
+    );
+
+    if (!alreadyHasCredentials) {
+      user.authProviders.push({
+        provider: "credentials",
+        providerId: data.email,
+      });
+      await user.save();
+    }
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("Update password error:", error);
+    return { error: { message: error.message || "Password update failed", statusCode: 500 } };
+  }
+};
