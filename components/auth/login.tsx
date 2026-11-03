@@ -93,6 +93,12 @@ export function Login() {
           <FieldError />
         </TextField>
 
+        <div className="flex justify-end">
+          <Link href="/password/forgot" className="text-sm text-accent hover:underline">
+            Forgot password?
+          </Link>
+        </div>
+
         <Button
           type="submit"
           variant="primary"
