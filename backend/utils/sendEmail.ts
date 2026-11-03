@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 export interface EmailOptions {
   email: string;
   subject: string;
-  message: string;
+  message?: string;
   html?: string;
 }
 
