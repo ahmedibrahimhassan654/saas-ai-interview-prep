@@ -29,6 +29,7 @@ export interface IUser extends Document {
   resetPasswordToken?: string;
   resetPasswordExpire?: Date;
   comparePassword(enteredPassword: string): Promise<boolean>;
+  getResetPasswordToken(): string;
 }
 
 const userSchema = new Schema<IUser>(
@@ -98,7 +99,7 @@ userSchema.methods.comparePassword = async function (
   return await bcrypt.compare(enteredPassword, this.password);
 };
 
-userSchema.methods.getResetPasswordToken = function (): string {
+userSchema.methods.getResetPasswordToken = function (this: IUser): string {
   const resetToken = crypto.randomBytes(20).toString("hex");
 
   this.resetPasswordToken = crypto
@@ -110,7 +111,6 @@ userSchema.methods.getResetPasswordToken = function (): string {
 
   return resetToken;
 };
-
 const User = mongoose.models.User || mongoose.model<IUser>("User", userSchema);
 
 export default User;

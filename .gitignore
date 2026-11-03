@@ -9,14 +9,13 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+.history
 # testing
 /coverage
 
 # next.js
 /.next/
 /out/
-.history
 
 # production
 /build
