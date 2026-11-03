@@ -1,6 +1,7 @@
 import dbConnect from "../config/dbConnect";
 import User from "../models/user.model";
 import { uploadFile, deleteFile } from "../utils/cloudinary";
+import crypto from "crypto";
 import sendEmail from "../utils/sendEmail";
 import { resetPasswordHTMLTemplate } from "../utils/emailTemplates";
 
@@ -206,4 +207,69 @@ export const forgotUserPassword = async (
     await user.save();
     throw new Error("Email could not be sent");
   }
+};
+
+interface ResetPasswordInput {
+  token: string;
+  password: string;
+  confirmPassword: string;
+}
+
+type ResetPasswordArg1 = string | ResetPasswordInput;
+type ResetPasswordArg2 =
+  | string
+  | { password?: string; confirmPassword?: string }
+  | undefined;
+
+export const resetUserPassword = async (
+  arg1: ResetPasswordArg1,
+  arg2?: ResetPasswordArg2,
+  arg3?: string,
+): Promise<{ passwordUpdated: true }> => {
+  let token: string;
+  let password: string;
+  let confirmPassword: string;
+
+  if (typeof arg1 === "string") {
+    token = arg1;
+    if (typeof arg2 === "string") {
+      password = arg2;
+      confirmPassword = arg3 ?? arg2;
+    } else if (arg2 && typeof arg2 === "object") {
+      password = arg2.password ?? "";
+      confirmPassword = arg2.confirmPassword ?? password;
+    } else {
+      password = "";
+      confirmPassword = "";
+    }
+  } else {
+    token = arg1.token;
+    password = arg1.password;
+    confirmPassword = arg1.confirmPassword;
+  }
+
+  await dbConnect();
+
+  const hashedToken = crypto.createHash("sha256").update(token).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken: hashedToken,
+    resetPasswordExpire: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    throw new Error("Invalid token or token expired");
+  }
+
+  if (password !== confirmPassword) {
+    throw new Error("Passwords do not match");
+  }
+
+  user.password = password;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  return { passwordUpdated: true };
 };

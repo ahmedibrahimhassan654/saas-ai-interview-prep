@@ -57,3 +57,27 @@ import { forgotPassword as forgotPasswordFromUserActions } from "@/actions/userA
 export async function forgotPassword(email: string): Promise<{ success?: boolean; error?: { message: string; statusCode: number } }> {
   return forgotPasswordFromUserActions(email);
 }
+
+import { resetPassword as resetPasswordFromUserActions } from "@/actions/userActions";
+
+export async function resetPassword(
+  token: string,
+  passwordOrData?: string | { password: string; confirmPassword: string },
+  confirmPasswordArg?: string,
+): Promise<{ passwordUpdated?: boolean; error?: { message: string; statusCode: number } }> {
+  let password: string;
+  let confirmPassword: string;
+
+  if (typeof passwordOrData === "string") {
+    password = passwordOrData;
+    confirmPassword = confirmPasswordArg ?? passwordOrData;
+  } else if (passwordOrData) {
+    password = passwordOrData.password;
+    confirmPassword = passwordOrData.confirmPassword;
+  } else {
+    password = "";
+    confirmPassword = "";
+  }
+
+  return resetPasswordFromUserActions(token, password, confirmPassword);
+}
