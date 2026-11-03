@@ -42,10 +42,10 @@ export const register = async (
       return { created: true };
     }
     throw new Error("User not created");
-  } catch (error: any) {
+  } catch (error: unknown) {
     return {
       error: {
-        message: error.message || "Registration failed",
+        message: (error as Error)?.message || "Registration failed",
         statusCode: 500,
       },
     };
@@ -79,19 +79,19 @@ export const updateUserProfile = async (data: {
             console.error("Error deleting old avatar:", error);
           }
         }
-      } catch (uploadError: any) {
+      } catch (uploadError: unknown) {
         console.error("Cloudinary upload error details:", uploadError);
-        console.error("Cloudinary upload error message:", uploadError?.message);
+        console.error("Cloudinary upload error message:", (uploadError as Error)?.message);
         return {
           error: {
-            message: uploadError?.message || "Avatar upload failed",
+            message: (uploadError as Error)?.message || "Avatar upload failed",
             statusCode: 400,
           },
         };
       }
     }
 
-    const updateData: any = {
+    const updateData: { name: string; profilePicture?: { id?: string; url?: string } } = {
       name: data.name,
     };
 
@@ -110,10 +110,10 @@ export const updateUserProfile = async (data: {
     }
 
     throw new Error("User not found");
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Update profile error:", error);
     return {
-      error: { message: error.message || "Update failed", statusCode: 500 },
+      error: { message: (error as Error)?.message || "Update failed", statusCode: 500 },
     };
   }
 };
@@ -160,11 +160,11 @@ export const updateUserPassword = async (data: {
     }
 
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Update password error:", error);
     return {
       error: {
-        message: error.message || "Password update failed",
+        message: (error as Error)?.message || "Password update failed",
         statusCode: 500,
       },
     };
@@ -195,11 +195,11 @@ export const forgotUserPassword = async (
   try {
     await sendEmail({
       email: user.email,
-      subject: "Password Reset Request",
+      subject: "Prep Ai Password Reset Request",
       message,
     });
     return { success: true };
-  } catch (error: any) {
+  } catch {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();

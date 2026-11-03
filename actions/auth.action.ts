@@ -13,8 +13,8 @@ export async function registerUser(
       return { error: result.error };
     }
     return { created: result.created };
-  } catch (error: any) {
-    return { error: { message: error.message || "Registration failed", statusCode: 500 } };
+  } catch (error: unknown) {
+    return { error: { message: (error as Error)?.message || "Registration failed", statusCode: 500 } };
   }
 }
 
@@ -30,8 +30,8 @@ export async function updateUserProfile(data: {
       return { error: result.error };
     }
     return { success: result.success };
-  } catch (error: any) {
-    return { error: { message: error.message || "Update failed", statusCode: 500 } };
+  } catch (error: unknown) {
+    return { error: { message: (error as Error)?.message || "Update failed", statusCode: 500 } };
   }
 }
 
@@ -47,8 +47,8 @@ export async function updatePassword(data: {
       return { error: result.error };
     }
     return { success: result.success };
-  } catch (error: any) {
-    return { error: { message: error.message || "Update password failed", statusCode: 500 } };
+  } catch (error: unknown) {
+    return { error: { message: (error as Error)?.message || "Update password failed", statusCode: 500 } };
   }
 }
 
