@@ -51,3 +51,9 @@ export async function updatePassword(data: {
     return { error: { message: error.message || "Update password failed", statusCode: 500 } };
   }
 }
+
+import { forgotPassword as forgotPasswordFromUserActions } from "@/actions/userActions";
+
+export async function forgotPassword(email: string): Promise<{ success?: boolean; error?: { message: string; statusCode: number } }> {
+  return forgotPasswordFromUserActions(email);
+}
