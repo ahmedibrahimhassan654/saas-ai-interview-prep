@@ -199,7 +199,8 @@ export const forgotUserPassword = async (
       message,
     });
     return { success: true };
-  } catch {
+  } catch (error: unknown) {
+    console.error("Send password reset email error:", error);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpire = undefined;
     await user.save();
